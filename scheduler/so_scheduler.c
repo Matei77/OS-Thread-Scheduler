@@ -52,12 +52,8 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 	args->thread = thread;
 	args->scheduler = scheduler;
 
-
 	rc = pthread_create(&thread->thread_id, NULL, start_thread, args);
 	DIE(rc != 0, "pthred_create() failed.");
-
-	// printf("created thread{thread_id = %ld; priority = %d}\n",
-	// 	   thread->thread_id, thread->priority);
 
 	thread->state = READY;
 	pq_push(scheduler->ready_threads, thread);
@@ -78,14 +74,56 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
  * + device index
  * returns: -1 if the device does not exist or 0 on success
  */
-DECL_PREFIX int so_wait(unsigned int io) { return 0; }
+DECL_PREFIX int so_wait(unsigned int io)
+{
+	if (io >= scheduler->io)
+		return -1;
+
+	scheduler->running_thread->state = WAITING;
+	scheduler->running_thread->waited_io = io;
+
+	so_exec();
+
+	return 0;
+}
 
 /*
  * signals an IO device
  * + device index
  * return the number of tasks woke or -1 on error
  */
-DECL_PREFIX int so_signal(unsigned int io) { return 0; }
+DECL_PREFIX int so_signal(unsigned int io)
+{
+	if (io >= scheduler->io)
+		return -1;
+
+	int nr_tasks_woke = 0;
+
+	node_t *it = scheduler->waiting_threads->head;
+	while (it != NULL) {
+		if (it->thread->state == WAITING && it->thread->waited_io == io) {
+
+			node_t *temp = it->next;
+			thread_t *woken_thread =
+				pq_remove_node(scheduler->waiting_threads, it);
+
+			woken_thread->state = READY;
+			woken_thread->used_time = 0;
+			woken_thread->waited_io = SO_MAX_NUM_EVENTS;
+
+			pq_push(scheduler->ready_threads, woken_thread);
+			nr_tasks_woke++;
+
+			it = temp;
+		} else {
+			it = it->next;
+		}
+	}
+
+	so_exec();
+
+	return nr_tasks_woke;
+}
 
 /*
  * does whatever operation
@@ -95,18 +133,6 @@ DECL_PREFIX void so_exec(void)
 	scheduler->running_thread->used_time++;
 
 	thread_t *last_thread = scheduler->running_thread;
-
-	// int *val = malloc(sizeof(int));
-	// sem_getvalue(&scheduler->running_thread->th_running, val);
-
-	// printf("updated here\n");
-	// printf("so_exec - thread: %ld - priority: %d - time: %d/%d - semaphore: "
-	// 	   "%d\n\n",
-	// 	   scheduler->running_thread->thread_id,
-	// 	   scheduler->running_thread->priority,
-	// 	   scheduler->running_thread->used_time, scheduler->time_quantum, *val);
-	
-	// free(val);
 
 	update_scheduler(scheduler);
 
@@ -119,27 +145,15 @@ DECL_PREFIX void so_exec(void)
  */
 DECL_PREFIX void so_end(void)
 {
-	// printf("so_end\n");
-	// printf("scheduler = %x\n", scheduler);
 	if (scheduler) {
 
 		int rc;
 
-		//printf("i'm here\n");
-		// if (scheduler->threads_nr != scheduler->finished_threads_nr) {
-
-		// rc = sem_wait(&scheduler->finished);
-		// DIE(rc != 0, "sem_wait() failed.");
-
-		// }
 		for (int i = 0; i < scheduler->threads_nr; i++) {
-			// printf("scheduler->threads_nr = %d\n", scheduler->threads_nr);
-			// printf("joining thread: %ld\n", scheduler->thread_ids[i]);
 			rc = pthread_join(scheduler->thread_ids[i], NULL);
 			DIE(rc != 0, "pthread_join() failed.");
 		}
 
-		// printf("destroy scheduler.\n");
 		destroy_scheduler(&scheduler);
 	}
 }

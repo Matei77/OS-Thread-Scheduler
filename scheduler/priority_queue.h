@@ -29,4 +29,6 @@ thread_t *pq_peek(priority_queue_t *queue);
 
 void pq_free(priority_queue_t **queue);
 
+thread_t *pq_remove_node(priority_queue_t *queue, node_t *node);
+
 #endif /* PRIORITY_QUEUE_H_ */

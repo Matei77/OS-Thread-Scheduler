@@ -6,11 +6,11 @@
 #include "priority_queue.h"
 #include "utils.h"
 
-#include <stdlib.h>
 #include <semaphore.h>
+#include <stdlib.h>
 
-
-scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io) {
+scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io)
+{
 	scheduler_t *new_scheduler = malloc(sizeof(scheduler_t));
 	DIE(new_scheduler == NULL, "new_scheduler malloc");
 
@@ -28,7 +28,8 @@ scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io) {
 	return new_scheduler;
 }
 
-void destroy_scheduler(scheduler_t **scheduler) {
+void destroy_scheduler(scheduler_t **scheduler)
+{
 	pq_free(&(*scheduler)->ready_threads);
 	pq_free(&(*scheduler)->waiting_threads);
 	pq_free(&(*scheduler)->terminated_threads);
@@ -39,7 +40,8 @@ void destroy_scheduler(scheduler_t **scheduler) {
 	*scheduler = NULL;
 }
 
-thread_t *create_thread(so_handler *function, unsigned int priority) {
+thread_t *create_thread(so_handler *function, unsigned int priority)
+{
 
 	int rc;
 
@@ -49,6 +51,7 @@ thread_t *create_thread(so_handler *function, unsigned int priority) {
 	new_thread->state = NEW;
 	new_thread->thread_id = 0;
 	new_thread->used_time = 0;
+	new_thread->waited_io = SO_MAX_NUM_EVENTS;
 
 	rc = sem_init(&new_thread->th_running, 0, 0);
 	DIE(rc != 0, "sem_init() failed.");
@@ -56,14 +59,14 @@ thread_t *create_thread(so_handler *function, unsigned int priority) {
 	return new_thread;
 }
 
-void *start_thread(void *args) {
-	thread_t *thread = ((start_args_t*)args)->thread;
-	scheduler_t *scheduler = ((start_args_t*)args)->scheduler;
+void *start_thread(void *args)
+{
+	thread_t *thread = ((start_args_t *)args)->thread;
+	scheduler_t *scheduler = ((start_args_t *)args)->scheduler;
 
 	int rc = sem_wait(&thread->th_running);
 	DIE(rc != 0, "sem_wait() failed.");
 
-	printf("function ran by thread: %ld\n", thread->thread_id);
 	thread->function(thread->priority);
 
 	thread->state = TERMINATED;
@@ -74,98 +77,80 @@ void *start_thread(void *args) {
 	return NULL;
 }
 
-void update_scheduler(scheduler_t *scheduler) {
-
-	// if (scheduler->running_thread->state == TERMINATED && scheduler->running_threads_nr == 0) {
-	// 	sem_post(&scheduler->running_thread->th_running);
-	// 	return;
-	// }
+void update_scheduler(scheduler_t *scheduler)
+{
 
 	if (scheduler->running_thread == NULL) {
 		update_running_thread(scheduler);
-		//sem_post(&scheduler->running_thread->th_running);
 		return;
-	} 
-	
+	}
+
 	if (scheduler->running_thread->state == TERMINATED) {
-		// if (scheduler->threads_nr == scheduler->finished_threads_nr) {
-			//sem_post(&scheduler->finished);
-		// }
-		
 		pq_push(scheduler->terminated_threads, scheduler->running_thread);
 		scheduler->running_thread = NULL;
 
 		update_running_thread(scheduler);
 
-
 		return;
-
 	}
-	
-	if (scheduler->running_thread->used_time == scheduler->time_quantum) {
-		
-		preempt_thread(scheduler);
-		
+
+	if (scheduler->running_thread->state == WAITING) {
+		pq_push(scheduler->waiting_threads, scheduler->running_thread);
+		scheduler->running_thread = NULL;
+
 		update_running_thread(scheduler);
 
-		//sem_post(&scheduler->running_thread->th_running);
+		return;
+	}
 
-		// int *val = malloc(sizeof(int));
-		// sem_getvalue(&scheduler->running_thread->th_running, val);
+	if (scheduler->running_thread->used_time == scheduler->time_quantum) {
 
-		// printf("new running node - thread: %ld - priority: %d - time: %d/%d - semaphore: %d\n\n", scheduler->running_thread->thread_id, scheduler->running_thread->priority, scheduler->running_thread->used_time, scheduler->time_quantum, *val);
+		preempt_thread(scheduler);
 
-		// free(val);
+		update_running_thread(scheduler);
 
 		return;
-		
-	} 
-	
+	}
+
 	if (pq_peek(scheduler->ready_threads) != NULL) {
 
-		if (scheduler->running_thread->priority < pq_peek(scheduler->ready_threads)->priority) {
-		
-		preempt_thread(scheduler);
+		if (scheduler->running_thread->priority <
+			pq_peek(scheduler->ready_threads)->priority) {
 
-		update_running_thread(scheduler);
+			preempt_thread(scheduler);
 
+			update_running_thread(scheduler);
 
-		return;
+			return;
 		}
 	}
-	
+
 	sem_post(&scheduler->running_thread->th_running);
 }
 
-void update_running_thread(scheduler_t *scheduler) {
+void update_running_thread(scheduler_t *scheduler)
+{
 	if (pq_peek(scheduler->ready_threads) != NULL) {
 
 		thread_t *next_thread = pq_pop(scheduler->ready_threads);
 		scheduler->running_thread = next_thread;
 
 		scheduler->running_thread->state = RUNNING;
-		
+
 		sem_post(&scheduler->running_thread->th_running);
 
-
-		//printf("update running thread to thread: %ld\n", scheduler->running_thread->thread_id);
 
 		return;
 	}
 	scheduler->running_thread = NULL;
-} 
+}
 
-void preempt_thread(scheduler_t *scheduler) {
-
-	// printf("preempt thread: %ld\n", scheduler->running_thread->thread_id);
-
+void preempt_thread(scheduler_t *scheduler)
+{
 	scheduler->running_thread->used_time = 0;
 	scheduler->running_thread->state = READY;
-
-	//sem_post(&scheduler->running_thread->th_running);
 
 	pq_push(scheduler->ready_threads, scheduler->running_thread);
 
 	scheduler->running_thread = NULL;
-	
 }

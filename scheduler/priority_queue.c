@@ -14,11 +14,6 @@ node_t *create_new_node(thread_t *thread) {
 	node_t *new_node = (node_t *)malloc(sizeof(node_t));
 	DIE(new_node == NULL, "new_node malloc");
 
-	// new_node->thread = malloc(sizeof(thread_t));
-	// DIE(new_node == NULL, "new_node->data malloc");
-
-	// memcpy(new_node->thread, thread, sizeof(thread_t));
-
 	new_node->thread = thread;
 	
 	new_node->next = NULL;
@@ -102,4 +97,28 @@ void pq_free(priority_queue_t **queue) {
 	}
 	free(*queue);
 	*queue = NULL;
+}
+
+thread_t *pq_remove_node(priority_queue_t *queue, node_t *node) {
+	if (queue->head == node) {
+		return pq_pop(queue);
+	}
+
+	node_t *it = queue->head;
+	while(it->next != NULL && it->next != node) {
+		it = it->next;
+	}
+
+	if (it->next == NULL) {
+		return NULL;
+	}
+
+	node_t *temp = it->next;
+	thread_t *thread = it->next->thread;
+
+	it->next = it->next->next;
+
+	free(temp);
+
+	return thread;
 }

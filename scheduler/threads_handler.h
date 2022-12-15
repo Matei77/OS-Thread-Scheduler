@@ -31,6 +31,8 @@ typedef struct thread_t {
 	unsigned int used_time;
 	unsigned int priority;
 
+	unsigned int waited_io;
+
 	sem_t th_running;
 
 	so_handler *function;
