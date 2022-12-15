@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-scheduler_t *scheduler = NULL;
+scheduler_t *scheduler;
 
 /*
  * creates and initializes scheduler

@@ -43,7 +43,8 @@ typedef struct scheduler_t {
 	thread_t *running_thread; /* the thread that is currently running */
 
 	unsigned int time_quantum; /* the maximum amount of time that the thread can
-								  use before being preempted */
+								* use before being preempted
+								*/
 	unsigned int io; /* the maiximum number of io devices supported */
 
 	pthread_t

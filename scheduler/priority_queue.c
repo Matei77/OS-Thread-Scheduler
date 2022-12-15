@@ -22,7 +22,7 @@ node_t *create_new_node(thread_t *thread)
 }
 
 /* Creates a new thread priority queue */
-priority_queue_t *pq_create()
+priority_queue_t *pq_create(void)
 {
 	priority_queue_t *pq;
 
@@ -37,9 +37,9 @@ priority_queue_t *pq_create()
 /* Adds a new thread to a priority queue */
 void pq_push(priority_queue_t *queue, thread_t *thread)
 {
-	if (!queue) {
+	if (!queue)
 		return;
-	}
+
 
 	node_t *new_node = create_new_node(thread);
 
