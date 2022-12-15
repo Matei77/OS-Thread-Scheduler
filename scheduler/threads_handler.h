@@ -10,7 +10,8 @@
 
 #include <semaphore.h>
 
-#define MAX_THREADS_NR 1024
+
+#define THREADS_INITIAL_SIZE 4
 
 typedef struct priority_queue_t priority_queue_t;
 
@@ -51,7 +52,8 @@ typedef struct scheduler_t {
 	unsigned int time_quantum; /* the maximum amount of time that the thread can use before being preempted */
 	unsigned int io; /* the maiximum number of io devices supported */
 
-	pthread_t thread_ids[MAX_THREADS_NR]; /* array containing the ids of all the threads created */
+	pthread_t *thread_ids; /* array containing the ids of all the threads created */
+	int threads_ids_size; /* the size of the allocated thread_ids array */
 	int threads_nr; /* the number of threads created */
 
 } scheduler_t;

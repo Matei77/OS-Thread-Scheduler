@@ -69,6 +69,14 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 	} else {
 		update_scheduler(scheduler);
 	}
+	
+	/* realloc the array of threads if necessary */
+	if (scheduler->threads_nr >= scheduler->threads_ids_size) {
+		scheduler->threads_ids_size *= 2;
+
+		scheduler->thread_ids = (pthread_t *) realloc(scheduler->thread_ids, scheduler->threads_ids_size * sizeof(pthread_t));
+		DIE(scheduler->thread_ids == NULL, "realloc() failed.");
+	}
 
 	/* add the thread to the array of threads */
 	scheduler->thread_ids[scheduler->threads_nr++] = thread->thread_id;

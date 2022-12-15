@@ -26,6 +26,10 @@ scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io)
 
 	new_scheduler->threads_nr = 0;
 
+	new_scheduler->threads_ids_size = THREADS_INITIAL_SIZE;
+	
+	new_scheduler->thread_ids = malloc(THREADS_INITIAL_SIZE * sizeof(pthread_t));
+
 	return new_scheduler;
 }
 
@@ -37,6 +41,8 @@ void destroy_scheduler(scheduler_t **scheduler)
 	pq_free(&(*scheduler)->terminated_threads);
 
 	free((*scheduler)->running_thread);
+	
+	free((*scheduler)->thread_ids);
 
 	free(*scheduler);
 	*scheduler = NULL;
