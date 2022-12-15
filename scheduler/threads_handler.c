@@ -27,8 +27,9 @@ scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io)
 	new_scheduler->threads_nr = 0;
 
 	new_scheduler->threads_ids_size = THREADS_INITIAL_SIZE;
-	
-	new_scheduler->thread_ids = malloc(THREADS_INITIAL_SIZE * sizeof(pthread_t));
+
+	new_scheduler->thread_ids =
+		malloc(THREADS_INITIAL_SIZE * sizeof(pthread_t));
 
 	return new_scheduler;
 }
@@ -41,7 +42,7 @@ void destroy_scheduler(scheduler_t **scheduler)
 	pq_free(&(*scheduler)->terminated_threads);
 
 	free((*scheduler)->running_thread);
-	
+
 	free((*scheduler)->thread_ids);
 
 	free(*scheduler);
@@ -133,11 +134,11 @@ void update_scheduler(scheduler_t *scheduler)
 		scheduler->running_thread->priority <
 			pq_peek(scheduler->ready_threads)->priority) {
 
-			preempt_thread(scheduler);
+		preempt_thread(scheduler);
 
-			update_running_thread(scheduler);
+		update_running_thread(scheduler);
 
-			return;
+		return;
 	}
 
 	/* if nothing happed signal the thread to continue */

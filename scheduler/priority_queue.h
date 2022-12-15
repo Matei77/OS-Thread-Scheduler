@@ -18,7 +18,6 @@ typedef struct priority_queue_t {
 	node_t *head;
 } priority_queue_t;
 
-
 priority_queue_t *pq_create();
 
 void pq_push(priority_queue_t *queue, thread_t *thread);

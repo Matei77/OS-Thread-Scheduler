@@ -8,21 +8,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /* Creates a new node */
-node_t *create_new_node(thread_t *thread) {
+node_t *create_new_node(thread_t *thread)
+{
 	node_t *new_node = (node_t *)malloc(sizeof(node_t));
 	DIE(new_node == NULL, "new_node malloc");
 
 	new_node->thread = thread;
-	
+
 	new_node->next = NULL;
 
 	return new_node;
 }
 
 /* Creates a new thread priority queue */
-priority_queue_t *pq_create() {
+priority_queue_t *pq_create()
+{
 	priority_queue_t *pq;
 
 	pq = malloc(sizeof(*pq));
@@ -34,7 +35,8 @@ priority_queue_t *pq_create() {
 }
 
 /* Adds a new thread to a priority queue */
-void pq_push(priority_queue_t *queue, thread_t *thread) {
+void pq_push(priority_queue_t *queue, thread_t *thread)
+{
 	if (!queue) {
 		return;
 	}
@@ -52,18 +54,19 @@ void pq_push(priority_queue_t *queue, thread_t *thread) {
 
 	} else {
 		node_t *it = queue->head;
-		while (it->next != NULL && it->next->thread->priority >= thread->priority) {
+		while (it->next != NULL &&
+			   it->next->thread->priority >= thread->priority) {
 			it = it->next;
 		}
 
 		new_node->next = it->next;
 		it->next = new_node;
 	}
-
 }
 
 /* Removes the thread with the highest priority */
-thread_t *pq_pop(priority_queue_t *queue) {
+thread_t *pq_pop(priority_queue_t *queue)
+{
 	node_t *temp = queue->head;
 	if (temp != NULL) {
 		queue->head = queue->head->next;
@@ -77,14 +80,17 @@ thread_t *pq_pop(priority_queue_t *queue) {
 	return NULL;
 }
 
-/* Gets the thread with the highest priority without removing it from the queue */
-thread_t *pq_peek(priority_queue_t *queue) {
+/* Gets the thread with the highest priority without removing it from the queue
+ */
+thread_t *pq_peek(priority_queue_t *queue)
+{
 	if (queue->head)
 		return queue->head->thread;
 	return NULL;
 }
 
-void pq_free(priority_queue_t **queue) {
+void pq_free(priority_queue_t **queue)
+{
 	node_t *it = (*queue)->head;
 	while (it) {
 		node_t *temp = it;
@@ -100,13 +106,14 @@ void pq_free(priority_queue_t **queue) {
 }
 
 /* Removes a given node from the priority queue */
-thread_t *pq_remove_node(priority_queue_t *queue, node_t *node) {
+thread_t *pq_remove_node(priority_queue_t *queue, node_t *node)
+{
 	if (queue->head == node) {
 		return pq_pop(queue);
 	}
 
 	node_t *it = queue->head;
-	while(it->next != NULL && it->next != node) {
+	while (it->next != NULL && it->next != node) {
 		it = it->next;
 	}
 

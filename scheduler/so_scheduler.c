@@ -21,9 +21,8 @@ scheduler_t *scheduler = NULL;
 DECL_PREFIX int so_init(unsigned int time_quantum, unsigned int io)
 {
 	/* check if time_quantum and io are valid */
-	if (time_quantum == 0 || io > SO_MAX_NUM_EVENTS) {
+	if (time_quantum == 0 || io > SO_MAX_NUM_EVENTS)
 		return -1;
-	}
 
 	/* check if has already been created */
 	if (scheduler)
@@ -52,6 +51,7 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 
 	/* initialize the arguments for the start_thread funciton */
 	start_args_t *args = malloc(sizeof(start_args_t));
+
 	args->thread = thread;
 	args->scheduler = scheduler;
 
@@ -64,17 +64,18 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 	pq_push(scheduler->ready_threads, thread);
 
 	/* if there is already a thread running consume one action from it */
-	if (scheduler->running_thread != NULL) {
+	if (scheduler->running_thread != NULL)
 		so_exec();
-	} else {
+	else
 		update_scheduler(scheduler);
-	}
-	
+
 	/* realloc the array of threads if necessary */
 	if (scheduler->threads_nr >= scheduler->threads_ids_size) {
 		scheduler->threads_ids_size *= 2;
 
-		scheduler->thread_ids = (pthread_t *) realloc(scheduler->thread_ids, scheduler->threads_ids_size * sizeof(pthread_t));
+		scheduler->thread_ids = (pthread_t *)realloc(
+			scheduler->thread_ids,
+			scheduler->threads_ids_size * sizeof(pthread_t));
 		DIE(scheduler->thread_ids == NULL, "realloc() failed.");
 	}
 
@@ -117,11 +118,12 @@ DECL_PREFIX int so_signal(unsigned int io)
 
 	int nr_tasks_woke = 0;
 
-	/* 
+	/*
 	 * remove the threads that were waiting for the io from the
 	 * waiting_threads queue and add them to the ready_threads queue
 	 */
 	node_t *it = scheduler->waiting_threads->head;
+
 	while (it != NULL) {
 		if (it->thread->state == WAITING && it->thread->waited_io == io) {
 

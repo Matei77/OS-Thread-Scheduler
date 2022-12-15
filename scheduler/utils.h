@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 /* macro for handling error codes */
 #define DIE(assertion, call_description)                                       \
 	do {                                                                       \
@@ -20,4 +19,4 @@
 		}                                                                      \
 	} while (0)
 
-#endif  /* UTILS_H_ */
+#endif /* UTILS_H_ */
