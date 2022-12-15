@@ -52,11 +52,12 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 	args->thread = thread;
 	args->scheduler = scheduler;
 
+
 	rc = pthread_create(&thread->thread_id, NULL, start_thread, args);
 	DIE(rc != 0, "pthred_create() failed.");
 
-	printf("created thread{thread_id = %ld; priority = %d}\n",
-		   thread->thread_id, thread->priority);
+	// printf("created thread{thread_id = %ld; priority = %d}\n",
+	// 	   thread->thread_id, thread->priority);
 
 	thread->state = READY;
 	pq_push(scheduler->ready_threads, thread);
@@ -66,7 +67,6 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 	} else {
 		update_scheduler(scheduler);
 	}
-
 
 	scheduler->thread_ids[scheduler->threads_nr++] = thread->thread_id;
 
@@ -94,9 +94,23 @@ DECL_PREFIX void so_exec(void)
 {
 	scheduler->running_thread->used_time++;
 
+	thread_t *last_thread = scheduler->running_thread;
+
+	// int *val = malloc(sizeof(int));
+	// sem_getvalue(&scheduler->running_thread->th_running, val);
+
+	// printf("updated here\n");
+	// printf("so_exec - thread: %ld - priority: %d - time: %d/%d - semaphore: "
+	// 	   "%d\n\n",
+	// 	   scheduler->running_thread->thread_id,
+	// 	   scheduler->running_thread->priority,
+	// 	   scheduler->running_thread->used_time, scheduler->time_quantum, *val);
+	
+	// free(val);
+
 	update_scheduler(scheduler);
 
-	int rc = sem_wait(&scheduler->running_thread->th_running);
+	int rc = sem_wait(&last_thread->th_running);
 	DIE(rc != 0, "sem_wait() failed.");
 }
 
@@ -105,16 +119,27 @@ DECL_PREFIX void so_exec(void)
  */
 DECL_PREFIX void so_end(void)
 {
-	int rc;
-
+	// printf("so_end\n");
+	// printf("scheduler = %x\n", scheduler);
 	if (scheduler) {
 
+		int rc;
+
+		//printf("i'm here\n");
+		// if (scheduler->threads_nr != scheduler->finished_threads_nr) {
+
+		// rc = sem_wait(&scheduler->finished);
+		// DIE(rc != 0, "sem_wait() failed.");
+
+		// }
 		for (int i = 0; i < scheduler->threads_nr; i++) {
+			// printf("scheduler->threads_nr = %d\n", scheduler->threads_nr);
+			// printf("joining thread: %ld\n", scheduler->thread_ids[i]);
 			rc = pthread_join(scheduler->thread_ids[i], NULL);
 			DIE(rc != 0, "pthread_join() failed.");
 		}
 
-		printf("destroy scheduler.\n");
+		// printf("destroy scheduler.\n");
 		destroy_scheduler(&scheduler);
 	}
 }

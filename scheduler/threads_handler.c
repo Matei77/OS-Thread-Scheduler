@@ -75,24 +75,50 @@ void *start_thread(void *args) {
 }
 
 void update_scheduler(scheduler_t *scheduler) {
+
+	// if (scheduler->running_thread->state == TERMINATED && scheduler->running_threads_nr == 0) {
+	// 	sem_post(&scheduler->running_thread->th_running);
+	// 	return;
+	// }
+
 	if (scheduler->running_thread == NULL) {
 		update_running_thread(scheduler);
+		//sem_post(&scheduler->running_thread->th_running);
 		return;
 	} 
 	
 	if (scheduler->running_thread->state == TERMINATED) {
+		// if (scheduler->threads_nr == scheduler->finished_threads_nr) {
+			//sem_post(&scheduler->finished);
+		// }
+		
 		pq_push(scheduler->terminated_threads, scheduler->running_thread);
+		scheduler->running_thread = NULL;
+
 		update_running_thread(scheduler);
+
+
 		return;
+
 	}
 	
-	if (scheduler->running_thread->used_time >= scheduler->time_quantum) {
+	if (scheduler->running_thread->used_time == scheduler->time_quantum) {
 		
 		preempt_thread(scheduler);
 		
 		update_running_thread(scheduler);
-		
+
+		//sem_post(&scheduler->running_thread->th_running);
+
+		// int *val = malloc(sizeof(int));
+		// sem_getvalue(&scheduler->running_thread->th_running, val);
+
+		// printf("new running node - thread: %ld - priority: %d - time: %d/%d - semaphore: %d\n\n", scheduler->running_thread->thread_id, scheduler->running_thread->priority, scheduler->running_thread->used_time, scheduler->time_quantum, *val);
+
+		// free(val);
+
 		return;
+		
 	} 
 	
 	if (pq_peek(scheduler->ready_threads) != NULL) {
@@ -102,6 +128,7 @@ void update_scheduler(scheduler_t *scheduler) {
 		preempt_thread(scheduler);
 
 		update_running_thread(scheduler);
+
 
 		return;
 		}
@@ -117,16 +144,28 @@ void update_running_thread(scheduler_t *scheduler) {
 		scheduler->running_thread = next_thread;
 
 		scheduler->running_thread->state = RUNNING;
+		
 		sem_post(&scheduler->running_thread->th_running);
+
+
+		//printf("update running thread to thread: %ld\n", scheduler->running_thread->thread_id);
+
 		return;
 	}
-	
 	scheduler->running_thread = NULL;
 } 
 
 void preempt_thread(scheduler_t *scheduler) {
+
+	// printf("preempt thread: %ld\n", scheduler->running_thread->thread_id);
+
 	scheduler->running_thread->used_time = 0;
 	scheduler->running_thread->state = READY;
+
+	//sem_post(&scheduler->running_thread->th_running);
+
 	pq_push(scheduler->ready_threads, scheduler->running_thread);
+
 	scheduler->running_thread = NULL;
+	
 }
