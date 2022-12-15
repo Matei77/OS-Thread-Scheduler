@@ -19,3 +19,7 @@ so_scheduler.o: so_scheduler.c so_scheduler.h
 .PHONY: clean
 clean:
 	-rm -f so_scheduler.o threads_handler.o priority_queue.o libscheduler.so
+
+.PHONY: pack
+pack:
+	zip -FSr 323CA_IonescuMateiStefan_Tema2.zip README.md Makefile *.c *.h
