@@ -76,31 +76,57 @@ void *start_thread(void *args) {
 
 void update_scheduler(scheduler_t *scheduler) {
 	if (scheduler->running_thread == NULL) {
-		if (pq_peek(scheduler->ready_threads) != NULL) {
-
-			thread_t *next_thread = pq_pop(scheduler->ready_threads);
-			scheduler->running_thread = next_thread;
-
-			scheduler->running_thread->state = RUNNING;
-			sem_post(&scheduler->running_thread->th_running);
-
-		} else {
-			scheduler->running_thread = NULL;
-		}
-	} else if (scheduler->running_thread->state == TERMINATED) {
+		update_running_thread(scheduler);
+		return;
+	} 
+	
+	if (scheduler->running_thread->state == TERMINATED) {
 		pq_push(scheduler->terminated_threads, scheduler->running_thread);
-		if (pq_peek(scheduler->ready_threads) != NULL) {
+		update_running_thread(scheduler);
+		return;
+	}
+	
+	if (scheduler->running_thread->used_time >= scheduler->time_quantum) {
+		
+		preempt_thread(scheduler);
+		
+		update_running_thread(scheduler);
+		
+		return;
+	} 
+	
+	if (pq_peek(scheduler->ready_threads) != NULL) {
 
-			thread_t *next_thread = pq_pop(scheduler->ready_threads);
-			scheduler->running_thread = next_thread;
+		if (scheduler->running_thread->priority < pq_peek(scheduler->ready_threads)->priority) {
+		
+		preempt_thread(scheduler);
 
-			scheduler->running_thread->state = RUNNING;
-			sem_post(&scheduler->running_thread->th_running);
-			
-		} else {
-			scheduler->running_thread = NULL;
+		update_running_thread(scheduler);
+
+		return;
 		}
 	}
+	
+	sem_post(&scheduler->running_thread->th_running);
 }
 
+void update_running_thread(scheduler_t *scheduler) {
+	if (pq_peek(scheduler->ready_threads) != NULL) {
 
+		thread_t *next_thread = pq_pop(scheduler->ready_threads);
+		scheduler->running_thread = next_thread;
+
+		scheduler->running_thread->state = RUNNING;
+		sem_post(&scheduler->running_thread->th_running);
+		return;
+	}
+	
+	scheduler->running_thread = NULL;
+} 
+
+void preempt_thread(scheduler_t *scheduler) {
+	scheduler->running_thread->used_time = 0;
+	scheduler->running_thread->state = READY;
+	pq_push(scheduler->ready_threads, scheduler->running_thread);
+	scheduler->running_thread = NULL;
+}

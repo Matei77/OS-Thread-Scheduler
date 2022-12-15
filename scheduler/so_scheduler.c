@@ -58,6 +58,7 @@ DECL_PREFIX tid_t so_fork(so_handler *func, unsigned int priority)
 	printf("created thread{thread_id = %ld; priority = %d}\n",
 		   thread->thread_id, thread->priority);
 
+	thread->state = READY;
 	pq_push(scheduler->ready_threads, thread);
 
 	if (scheduler->running_thread != NULL) {
@@ -91,12 +92,12 @@ DECL_PREFIX int so_signal(unsigned int io) { return 0; }
  */
 DECL_PREFIX void so_exec(void)
 {
-	// scheduler->running_thread->used_time++;
+	scheduler->running_thread->used_time++;
 
-	// update_scheduler(scheduler);
+	update_scheduler(scheduler);
 
-	// int rc = sem_wait(&scheduler->running_thread->th_running);
-	// DIE(rc != 0, "sem_wait() failed.");
+	int rc = sem_wait(&scheduler->running_thread->th_running);
+	DIE(rc != 0, "sem_wait() failed.");
 }
 
 /*

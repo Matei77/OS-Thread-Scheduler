@@ -70,4 +70,8 @@ void *start_thread(void *args);
 
 void update_scheduler(scheduler_t *scheduler);
 
+void update_running_thread(scheduler_t *scheduler);
+
+void preempt_thread(scheduler_t *scheduler);
+
 #endif /* THREADS_HANDLER_H_ */

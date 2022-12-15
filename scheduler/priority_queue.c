@@ -57,7 +57,7 @@ void pq_push(priority_queue_t *queue, thread_t *thread) {
 
 	} else {
 		node_t *it = queue->head;
-		while (it->next != NULL && it->next->thread->priority > thread->priority) {
+		while (it->next != NULL && it->next->thread->priority >= thread->priority) {
 			it = it->next;
 		}
 
@@ -94,7 +94,7 @@ void pq_free(priority_queue_t **queue) {
 	while (it) {
 		node_t *temp = it;
 		it = it->next;
-				
+
 		sem_destroy(&temp->thread->th_running);
 
 		free(temp->thread);
