@@ -24,40 +24,40 @@ typedef enum {
 
 typedef struct thread_t {
 
-	pthread_t thread_id;
+	pthread_t thread_id; /* the id of the thread */
 
-	thread_state_t state;
+	thread_state_t state; /* the state of the thread */
 
-	unsigned int used_time;
-	unsigned int priority;
+	unsigned int used_time; /* the time used by the thread */
+	unsigned int priority; /* the priority of the thread */
 
-	unsigned int waited_io;
+	unsigned int waited_io; /*the io that the thread is waiting for */
 
-	sem_t th_running;
+	sem_t th_running; /* semaphore that indicates if the thread is running */
 
-	so_handler *function;
+	so_handler *function; /* the function ran by the thread */
 
 } thread_t;
 
 
 typedef struct scheduler_t {
 
-	priority_queue_t *ready_threads;
-	priority_queue_t *waiting_threads;
-	priority_queue_t *terminated_threads;
+	priority_queue_t *ready_threads; /* priority queue of ready threads */
+	priority_queue_t *waiting_threads; /* priority queue of waithing threads */
+	priority_queue_t *terminated_threads; /* priority queue of terminated threads */
 
-	thread_t *running_thread;
+	thread_t *running_thread; /* the thread that is currently running */
 
-	unsigned int time_quantum;
-	unsigned int io;
+	unsigned int time_quantum; /* the maximum amount of time that the thread can use before being preempted */
+	unsigned int io; /* the maiximum number of io devices supported */
 
-	pthread_t thread_ids[MAX_THREADS_NR];
-	int threads_nr;
+	pthread_t thread_ids[MAX_THREADS_NR]; /* array containing the ids of all the threads created */
+	int threads_nr; /* the number of threads created */
 
 } scheduler_t;
 
 typedef struct start_args_t {
-	thread_t *thread;
+	thread_t *thread; 
 	scheduler_t *scheduler;
 	
 } start_args_t;

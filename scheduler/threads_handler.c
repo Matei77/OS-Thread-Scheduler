@@ -9,10 +9,11 @@
 #include <semaphore.h>
 #include <stdlib.h>
 
+/* allocate memory for a new scheduler and initialize it */
 scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io)
 {
 	scheduler_t *new_scheduler = malloc(sizeof(scheduler_t));
-	DIE(new_scheduler == NULL, "new_scheduler malloc");
+	DIE(new_scheduler == NULL, "new_scheduler malloc() failed.");
 
 	new_scheduler->time_quantum = time_quantum;
 	new_scheduler->io = io;
@@ -28,6 +29,7 @@ scheduler_t *create_scheduler(unsigned int time_quantum, unsigned int io)
 	return new_scheduler;
 }
 
+/* free the memory allocated for the scheduler */
 void destroy_scheduler(scheduler_t **scheduler)
 {
 	pq_free(&(*scheduler)->ready_threads);
@@ -40,12 +42,12 @@ void destroy_scheduler(scheduler_t **scheduler)
 	*scheduler = NULL;
 }
 
+/* allocate memory for a new thread and initialize it */
 thread_t *create_thread(so_handler *function, unsigned int priority)
 {
-
-	int rc;
-
 	thread_t *new_thread = malloc(sizeof(thread_t));
+	DIE(new_thread == NULL, "new_thread malloc() failed.");
+
 	new_thread->function = function;
 	new_thread->priority = priority;
 	new_thread->state = NEW;
@@ -53,22 +55,26 @@ thread_t *create_thread(so_handler *function, unsigned int priority)
 	new_thread->used_time = 0;
 	new_thread->waited_io = SO_MAX_NUM_EVENTS;
 
-	rc = sem_init(&new_thread->th_running, 0, 0);
+	int rc = sem_init(&new_thread->th_running, 0, 0);
 	DIE(rc != 0, "sem_init() failed.");
 
 	return new_thread;
 }
 
+/* the function that created threads run */
 void *start_thread(void *args)
 {
 	thread_t *thread = ((start_args_t *)args)->thread;
 	scheduler_t *scheduler = ((start_args_t *)args)->scheduler;
 
+	/* wait for the thread to be running */
 	int rc = sem_wait(&thread->th_running);
 	DIE(rc != 0, "sem_wait() failed.");
 
+	/* call the function */
 	thread->function(thread->priority);
 
+	/* update thread state and scheduler */
 	thread->state = TERMINATED;
 	update_scheduler(scheduler);
 
@@ -77,14 +83,16 @@ void *start_thread(void *args)
 	return NULL;
 }
 
+/* set running thread following the round robin algorithm */
 void update_scheduler(scheduler_t *scheduler)
 {
-
+	/* there is no thread running */
 	if (scheduler->running_thread == NULL) {
 		update_running_thread(scheduler);
 		return;
 	}
 
+	/* thread finished it's execution */
 	if (scheduler->running_thread->state == TERMINATED) {
 		pq_push(scheduler->terminated_threads, scheduler->running_thread);
 		scheduler->running_thread = NULL;
@@ -94,6 +102,7 @@ void update_scheduler(scheduler_t *scheduler)
 		return;
 	}
 
+	/* thread is waiting for IO */
 	if (scheduler->running_thread->state == WAITING) {
 		pq_push(scheduler->waiting_threads, scheduler->running_thread);
 		scheduler->running_thread = NULL;
@@ -103,6 +112,7 @@ void update_scheduler(scheduler_t *scheduler)
 		return;
 	}
 
+	/* thread reached it's maximum time used */
 	if (scheduler->running_thread->used_time == scheduler->time_quantum) {
 
 		preempt_thread(scheduler);
@@ -112,9 +122,9 @@ void update_scheduler(scheduler_t *scheduler)
 		return;
 	}
 
-	if (pq_peek(scheduler->ready_threads) != NULL) {
-
-		if (scheduler->running_thread->priority <
+	/* a thread with higher priority has been created and needs to be run */
+	if (pq_peek(scheduler->ready_threads) != NULL &&
+		scheduler->running_thread->priority <
 			pq_peek(scheduler->ready_threads)->priority) {
 
 			preempt_thread(scheduler);
@@ -122,12 +132,13 @@ void update_scheduler(scheduler_t *scheduler)
 			update_running_thread(scheduler);
 
 			return;
-		}
 	}
 
+	/* if nothing happed signal the thread to continue */
 	sem_post(&scheduler->running_thread->th_running);
 }
 
+/* select the next thread from the ready queue */
 void update_running_thread(scheduler_t *scheduler)
 {
 	if (pq_peek(scheduler->ready_threads) != NULL) {
@@ -139,12 +150,12 @@ void update_running_thread(scheduler_t *scheduler)
 
 		sem_post(&scheduler->running_thread->th_running);
 
-
 		return;
 	}
 	scheduler->running_thread = NULL;
 }
 
+/* move the running thread to the ready queue and reset it's used time */
 void preempt_thread(scheduler_t *scheduler)
 {
 	scheduler->running_thread->used_time = 0;

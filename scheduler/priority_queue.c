@@ -21,7 +21,7 @@ node_t *create_new_node(thread_t *thread) {
 	return new_node;
 }
 
-/* Creates a new priority queue */
+/* Creates a new thread priority queue */
 priority_queue_t *pq_create() {
 	priority_queue_t *pq;
 
@@ -33,7 +33,7 @@ priority_queue_t *pq_create() {
 	return pq;
 }
 
-/* Adds a new node to a priority queue */
+/* Adds a new thread to a priority queue */
 void pq_push(priority_queue_t *queue, thread_t *thread) {
 	if (!queue) {
 		return;
@@ -62,7 +62,7 @@ void pq_push(priority_queue_t *queue, thread_t *thread) {
 
 }
 
-/* Removes the highest priority node */
+/* Removes the thread with the highest priority */
 thread_t *pq_pop(priority_queue_t *queue) {
 	node_t *temp = queue->head;
 	if (temp != NULL) {
@@ -77,7 +77,7 @@ thread_t *pq_pop(priority_queue_t *queue) {
 	return NULL;
 }
 
-/* Gets the data from the highest priority node */
+/* Gets the thread with the highest priority without removing it from the queue */
 thread_t *pq_peek(priority_queue_t *queue) {
 	if (queue->head)
 		return queue->head->thread;
@@ -99,6 +99,7 @@ void pq_free(priority_queue_t **queue) {
 	*queue = NULL;
 }
 
+/* Removes a given node from the priority queue */
 thread_t *pq_remove_node(priority_queue_t *queue, node_t *node) {
 	if (queue->head == node) {
 		return pq_pop(queue);
